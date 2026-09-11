@@ -37,8 +37,13 @@ The service checks the outage source every hour, displays the latest schedules f
 3. Sign in, add your place(s), grant permissions, and start the service.
 
 ## Privacy
-B-Barq uses your phone number only for sign-in authentication, and your Bill ID(s) only to fetch outage schedules. **No personal data is collected or shared.**
+B-Barq does not collect or share personal information such as your name, phone number, or bill ID.
 
+The app stores your saved data locally on your device. Requests for electricity outage information are made directly from the app to the relevant service.
+
+B-Barq currently includes Yandex AppMetrica, for finding errors and bugs. It may collect basic device and usage information according to its own privacy policy. B-Barq does not intentionally send personal information such as phone numbers or bill IDs to AppMetrica.
+
+AppMetrica may be removed in a future update if it is no longer needed.
 ## Contribution
 Contributions are welcome! If you have ideas, improvements, or bug fixes, feel free to:
 * Fork the repository
