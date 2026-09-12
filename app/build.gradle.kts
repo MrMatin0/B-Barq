@@ -121,6 +121,9 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
+    // MainActivity extends AppCompatActivity and Utils uses AppCompatDelegate,
+    // so this belongs here rather than arriving transitively through material.
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.ui)
@@ -163,11 +166,14 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    val composeBom = platform("androidx.compose:compose-bom:2025.05.00")
+    // Home screen widget.
+    implementation(libs.androidx.glance.appwidget)
+
+    val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
-    implementation("androidx.compose.material3:material3")
+    implementation(libs.androidx.material3)
     // Android Studio Preview support
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
 }

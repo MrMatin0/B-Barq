@@ -8,6 +8,7 @@ import com.aliJafari.bbarq.data.model.Place
 import com.aliJafari.bbarq.data.repository.OutageRepository
 import com.aliJafari.bbarq.data.repository.PlaceOutage
 import com.aliJafari.bbarq.data.repository.PlaceRepository
+import com.aliJafari.bbarq.ui.widget.publishOutagesToWidget
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
 import com.aliJafari.bbarq.utils.ReminderOffset
@@ -77,6 +78,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             ScheduleEvent.DismissUpdate -> _state.update { it.copy(update = null) }
             is ScheduleEvent.SelectPlace -> _state.update { it.copy(selectedPlaceId = event.placeId) }
             is ScheduleEvent.Share -> _effects.tryEmit(ScheduleEffect.ShareSchedule(event.schedule))
+            is ScheduleEvent.Copy -> _effects.tryEmit(ScheduleEffect.CopySchedule(event.schedule))
         }
     }
 
@@ -128,6 +130,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                         null
                     },
                 )
+            }
+
+            // A run where everything failed says nothing about the schedule, so
+            // it must not replace whatever the widget is already showing.
+            if (result.messages.isEmpty() || result.schedules.isNotEmpty()) {
+                publishOutagesToWidget(getApplication(), result.schedules)
             }
         }
     }

@@ -48,10 +48,12 @@ sealed interface ScheduleEvent {
     data object DismissUpdate : ScheduleEvent
     data class SelectPlace(val placeId: Long?) : ScheduleEvent
     data class Share(val schedule: PlaceOutage) : ScheduleEvent
+    data class Copy(val schedule: PlaceOutage) : ScheduleEvent
 }
 
 /** One-shot side effects that need an Activity to carry them out. */
 sealed interface ScheduleEffect {
     data object OpenPlaceEditor : ScheduleEffect
     data class ShareSchedule(val schedule: PlaceOutage) : ScheduleEffect
+    data class CopySchedule(val schedule: PlaceOutage) : ScheduleEffect
 }

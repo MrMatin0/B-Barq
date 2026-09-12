@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      Declared explicitly: the app was only ever granted INTERNET because a
+      third-party SDK's manifest contributed it during manifest merging, so
+      dropping that dependency would have silently broken every API call.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -43,6 +50,18 @@
         </activity>
 
         <receiver android:name=".utils.ReminderReceiver" />
+
+        <receiver
+            android:name=".ui.widget.OutageWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/outage_widget_info" />
+        </receiver>
 
         <service
             android:name=".ForegroundService"
