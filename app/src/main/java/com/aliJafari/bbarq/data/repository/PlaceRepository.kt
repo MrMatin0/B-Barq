@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.local.ADatabase
 import com.aliJafari.bbarq.data.model.Place
+import com.aliJafari.bbarq.utils.moveItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +43,10 @@ class PlaceRepository private constructor(context: Context) {
 
     suspend fun savePlace(place: Place): Place = withContext(Dispatchers.IO) {
         val saved = if (place.id == 0L) {
-            place.copy(id = dao.insert(place))
+            // New places go to the bottom of the user's ordering, not to
+            // whichever slot a default sortOrder of 0 would collide with.
+            val positioned = place.copy(sortOrder = (dao.maxSortOrder() ?: -1) + 1)
+            positioned.copy(id = dao.insert(positioned))
         } else {
             dao.update(place)
             place
@@ -54,6 +58,31 @@ class PlaceRepository private constructor(context: Context) {
     suspend fun deletePlace(place: Place) {
         withContext(Dispatchers.IO) {
             dao.delete(place)
+            _places.value = dao.getAll()
+        }
+    }
+
+    /**
+     * Moves the place at [fromIndex] to [toIndex] and renumbers the column.
+     *
+     * The new order is published before the write lands: the drag gesture has
+     * already settled the row into its slot on screen, and waiting for Room
+     * would snap the list back for a frame. Renumbering everything also
+     * densifies the id-derived values left behind by migration 3 -> 4.
+     */
+    suspend fun movePlace(fromIndex: Int, toIndex: Int) {
+        if (fromIndex == toIndex) return
+
+        val current = _places.value
+        if (fromIndex !in current.indices || toIndex !in current.indices) return
+
+        val reordered = current
+            .moveItem(fromIndex, toIndex)
+            .mapIndexed { index, place -> place.copy(sortOrder = index) }
+
+        _places.value = reordered
+        withContext(Dispatchers.IO) {
+            dao.updateAll(reordered)
             _places.value = dao.getAll()
         }
     }

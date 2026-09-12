@@ -95,6 +95,10 @@ class PreferencesViewModel(application: Application) : AndroidViewModel(applicat
                 _state.update { it.copy(isEditorVisible = false) }
             }
 
+            is PreferencesEvent.MovePlace -> viewModelScope.launch {
+                placeRepository.movePlace(event.fromIndex, event.toIndex)
+            }
+
             is PreferencesEvent.SetDarkMode -> {
                 prefsManager.setDarkMode(event.enabled)
                 _state.update { it.copy(darkMode = event.enabled) }
