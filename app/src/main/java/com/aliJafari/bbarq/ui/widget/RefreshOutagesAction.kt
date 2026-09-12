@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
-import androidx.glance.appwidget.update
+import androidx.glance.appwidget.updateAll
 import com.aliJafari.bbarq.data.repository.OutageRepository
 import com.aliJafari.bbarq.data.repository.PlaceOutage
 import com.aliJafari.bbarq.data.repository.PlaceRepository
@@ -42,6 +42,6 @@ class RefreshOutagesAction : ActionCallback {
             }
         }
 
-        OutageWidget.update(context, glanceId)
+        OutageWidget.updateAll(context)
     }
 }
