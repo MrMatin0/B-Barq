@@ -1,9 +1,39 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("com.google.devtools.ksp")
     alias(libs.plugins.kotlin.compose)
 }
+
+// Release signing material can come from either a local (git-ignored)
+// keystore.properties file or from environment variables in CI.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+fun signingValue(propertyKey: String, envKey: String): String? =
+    keystoreProperties.getProperty(propertyKey)?.takeIf { it.isNotBlank() }
+        ?: System.getenv(envKey)?.takeIf { it.isNotBlank() }
+
+val releaseStorePath = signingValue("storeFile", "KEYSTORE_FILE")
+val releaseStorePassword = signingValue("storePassword", "KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "KEY_PASSWORD")
+
+val releaseKeystoreFile = releaseStorePath?.let { path ->
+    val asIs = file(path)
+    if (asIs.exists()) asIs else rootProject.file(path).takeIf { it.exists() }
+}
+
+val hasReleaseSigning = releaseKeystoreFile != null &&
+    releaseStorePassword != null &&
+    releaseKeyAlias != null &&
+    releaseKeyPassword != null
 
 android {
     namespace = "com.aliJafari.bbarq"
@@ -21,8 +51,38 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = releaseKeystoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Without a signing config the output is app-release-unsigned.apk,
+            // which Android rejects with "package appears to be invalid".
+            // Prefer the real release key; fall back to the debug keystore so a
+            // plain `assembleRelease` still produces an installable APK.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "No release signing config found (keystore.properties or " +
+                        "KEYSTORE_FILE/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD). " +
+                        "Falling back to the debug keystore: do not publish this build.",
+                )
+                signingConfigs.getByName("debug")
+            }
+
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
