@@ -25,11 +25,18 @@ import kotlinx.coroutines.launch
  */
 class PreferencesViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val placeRepository = PlaceRepository.getInstance(application)
-    private val prefsManager = PreferencesManager(application)
+    /**
+     * AndroidViewModel.application is private, so referencing `application`
+     * outside of property initializers resolves to that inaccessible member
+     * instead of the constructor parameter. Keep our own reference instead.
+     */
+    private val app: Application = application
+
+    private val placeRepository = PlaceRepository.getInstance(app)
+    private val prefsManager = PreferencesManager(app)
 
     private val systemInDarkMode: Boolean
-        get() = (application.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+        get() = (app.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
 
     private val _state = MutableStateFlow(
@@ -70,7 +77,7 @@ class PreferencesViewModel(application: Application) : AndroidViewModel(applicat
 
             PreferencesEvent.ConfirmLogout -> {
                 _state.update { it.copy(isLogoutDialogVisible = false) }
-                AuthStorage(getApplication()).clearToken()
+                AuthStorage(app).clearToken()
                 _effects.tryEmit(PreferencesEffect.NavigateToLogin)
             }
 
