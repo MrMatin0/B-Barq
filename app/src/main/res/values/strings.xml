@@ -99,4 +99,58 @@
     <string name="update_button">Update</string>
     <string name="all">All</string>
     <string name="version">Version : V%s</string>
+
+    <!-- ===== Modern UI/UX overhaul ===== -->
+    <string name="action_close">Close</string>
+    <string name="retry">Retry</string>
+    <string name="update_available_subtitle">Version %1$s is ready to install</string>
+
+    <!-- Outage card -->
+    <string name="outage_countdown">Outage %1$s</string>
+    <string name="outage_in_progress">Outage in progress</string>
+    <string name="outage_finished">Outage finished</string>
+    <string name="label_duration">Duration</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="outage_reason">Reason</string>
+    <string name="outage_address">Address</string>
+    <string name="schedule_details">Details</string>
+
+    <!-- Schedule screen -->
+    <string name="loading_schedules">Fetching outage schedules…</string>
+    <string name="stale_data_notice">Showing the last data we managed to fetch.</string>
+    <string name="no_places_title">No places yet</string>
+    <string name="all_clear_title">All clear</string>
+    <string name="outages_count">%1$d scheduled</string>
+    <string name="monitoring_active">Monitoring is on</string>
+    <string name="monitoring_inactive">Monitoring is off</string>
+
+    <!-- Preferences -->
+    <string name="permissions_section_title">Needs your attention</string>
+    <string name="places_count">%1$d tracked</string>
+    <string name="reminders_count">%1$d reminders</string>
+    <string name="reminders_off">Reminders off</string>
+    <string name="dark_mode_subtitle">Dimmed surfaces, easier on the eyes at night</string>
+    <string name="language_subtitle">Display language of the app</string>
+    <string name="about_subtitle">Source code, releases and issues</string>
+    <string name="logout_card_subtitle">Sign out of your Barghe Man account</string>
+
+    <!-- Place editor -->
+    <string name="place_editor_subtitle_add">Track outages for a new place</string>
+    <string name="place_editor_subtitle_edit">Update this place\'s details</string>
+    <string name="bill_id_helper">The 13 digit identifier printed on your bill</string>
+    <string name="bill_id_counter" translatable="false">%1$d/%2$d</string>
+    <string name="place_reminders_hint">Pick when you want to be warned</string>
+
+    <!-- Login -->
+    <string name="login_phone_hint" translatable="false">0912 345 6789</string>
+    <string name="login_phone_helper">We will text you a one time code</string>
+    <string name="login_invalid_phone">Enter a valid 11 digit mobile number</string>
+    <string name="login_code_title">Enter the code</string>
+    <string name="login_code_subtitle">Sent to %1$s</string>
+    <string name="login_resend">Resend code</string>
+    <string name="login_resend_in">Resend in %1$d s</string>
+    <string name="login_change_number">Change number</string>
+    <string name="login_success_title">You\'re in</string>
+    <string name="login_success_subtitle">Restart the app to start tracking outages</string>
 </resources>

@@ -13,26 +13,24 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.aliJafari.bbarq.data.model.Outage
 import com.aliJafari.bbarq.data.repository.OutageRepository
 import com.aliJafari.bbarq.data.repository.PlaceOutage
 import com.aliJafari.bbarq.data.repository.PlaceRepository
 import com.aliJafari.bbarq.ui.main.MainActivity
-import com.aliJafari.bbarq.ui.main.ScheduleUrgency
-import com.aliJafari.bbarq.ui.main.relativeStatus
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
 import com.aliJafari.bbarq.utils.ReminderOffset
 import com.aliJafari.bbarq.utils.RequestUnsuccessful
+import com.aliJafari.bbarq.utils.ScheduleUrgency
+import com.aliJafari.bbarq.utils.relativeStatus
 import com.aliJafari.bbarq.utils.toEpochMillis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
-import kotlin.collections.forEach
 
 class ForegroundService : Service() {
 
@@ -66,7 +64,7 @@ class ForegroundService : Service() {
     private fun ensureInitialized() {
         if (initialized) return
         repository = OutageRepository(applicationContext)
-        placeRepository = PlaceRepository(applicationContext)
+        placeRepository = PlaceRepository.getInstance(applicationContext)
         notificationManager = getSystemService(NotificationManager::class.java)
         prefs = applicationContext.getSharedPreferences("my_prefs", MODE_PRIVATE)
         refreshIntent = PendingIntent.getService(

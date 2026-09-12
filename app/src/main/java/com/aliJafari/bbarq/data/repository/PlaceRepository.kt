@@ -5,29 +5,57 @@ import androidx.core.content.edit
 import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.local.ADatabase
 import com.aliJafari.bbarq.data.model.Place
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 
-class PlaceRepository(context: Context) {
+/**
+ * Single source of truth for places.
+ *
+ * Previously every caller built its own instance and re-queried Room, so the
+ * schedule tab and the preferences tab could disagree about which places exist
+ * until one of them happened to reload. The repository is now a process
+ * singleton that publishes [places] as a [StateFlow]; writers update it, and
+ * every ViewModel simply observes.
+ */
+class PlaceRepository private constructor(context: Context) {
+
     private val appContext = context.applicationContext
     private val dao = ADatabase.getInstance(appContext).PlaceDao()
     private val prefs = appContext.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
 
+    private val _places = MutableStateFlow<List<Place>>(emptyList())
+    val places: StateFlow<List<Place>> = _places.asStateFlow()
+
+    /**
+     * Blocking read. Kept for [com.aliJafari.bbarq.ForegroundService], which
+     * already runs off the main thread and has no coroutine scope of its own.
+     */
     fun getPlaces(): List<Place> {
         migrateLegacyBillId()
-        return dao.getAll()
+        return dao.getAll().also { _places.value = it }
     }
 
-    fun savePlace(place: Place): Place {
-        return if (place.id == 0L) {
-            val id = dao.insert(place)
-            place.copy(id = id)
+    suspend fun refresh(): List<Place> = withContext(Dispatchers.IO) { getPlaces() }
+
+    suspend fun savePlace(place: Place): Place = withContext(Dispatchers.IO) {
+        val saved = if (place.id == 0L) {
+            place.copy(id = dao.insert(place))
         } else {
             dao.update(place)
             place
         }
+        _places.value = dao.getAll()
+        saved
     }
 
-    fun deletePlace(place: Place) {
-        dao.delete(place)
+    suspend fun deletePlace(place: Place) {
+        withContext(Dispatchers.IO) {
+            dao.delete(place)
+            _places.value = dao.getAll()
+        }
     }
 
     private fun migrateLegacyBillId() {
@@ -41,8 +69,8 @@ class PlaceRepository(context: Context) {
                     name = appContext.getString(R.string.default_place_name),
                     billId = legacyBillId,
                     colorKey = "red",
-                    iconKey = "home"
-                )
+                    iconKey = "home",
+                ),
             )
         }
         prefs.edit(commit = true) { putBoolean(LEGACY_BILL_ID_MIGRATED, true) }
@@ -51,5 +79,13 @@ class PlaceRepository(context: Context) {
     companion object {
         private const val BILL_ID_LENGTH = 13
         private const val LEGACY_BILL_ID_MIGRATED = "legacy_bill_id_migrated"
+
+        @Volatile
+        private var instance: PlaceRepository? = null
+
+        fun getInstance(context: Context): PlaceRepository =
+            instance ?: synchronized(this) {
+                instance ?: PlaceRepository(context).also { instance = it }
+            }
     }
 }

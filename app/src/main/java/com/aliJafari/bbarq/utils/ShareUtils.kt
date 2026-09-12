@@ -5,19 +5,16 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.view.View
 import android.view.ViewGroup
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import androidx.core.view.doOnPreDraw
 import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.repository.PlaceOutage
-import com.aliJafari.bbarq.ui.main.ShareableScheduleCard
-import kotlinx.coroutines.Dispatchers
+import com.aliJafari.bbarq.ui.screens.schedule.ShareableScheduleCard
+import com.aliJafari.bbarq.ui.theme.BBarqTheme
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.coroutines.resume
@@ -55,7 +52,7 @@ suspend fun shareSchedule(
 
         putExtra(
             Intent.EXTRA_TEXT,
-            generateShareText(context,schedule)
+            generateShareText(context, schedule)
         )
 
         putExtra(
@@ -73,6 +70,7 @@ suspend fun shareSchedule(
         )
     )
 }
+
 fun generateShareText(
     context: Context,
     schedule: PlaceOutage
@@ -90,6 +88,7 @@ fun generateShareText(
             ?: context.getString(R.string.value_not_available)
     )
 }
+
 private suspend fun createScheduleBitmap(
     context: Context,
     schedule: PlaceOutage,
@@ -111,7 +110,8 @@ private suspend fun createScheduleBitmap(
     )
 
     composeView.setContent {
-        MaterialTheme {
+        // Always the light scheme: the bitmap ends up in someone else's chat app.
+        BBarqTheme(darkTheme = false, dynamicColor = false) {
             ShareableScheduleCard(schedule)
         }
     }
