@@ -68,3 +68,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: app/build/outputs/apk/release/*.apk
+          # A successful tag build is a real release, not a pre-release —
+          # GitHub only shows the "Latest" badge for non-prerelease releases.
+          prerelease: false
+          make_latest: true
