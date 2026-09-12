@@ -1,0 +1,13 @@
+# Every change needs the owner's review by default.
+*                       @MrMatin0
+
+# Build, packaging, signing and automation: the files where a mistake ships to
+# every user at once.
+/gradle/                 @MrMatin0
+/gradle.properties       @MrMatin0
+/settings.gradle.kts     @MrMatin0
+/build.gradle.kts        @MrMatin0
+/app/build.gradle.kts    @MrMatin0
+/app/proguard-rules.pro  @MrMatin0
+/app/schemas/            @MrMatin0
+/.github/                @MrMatin0

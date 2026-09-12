@@ -1,0 +1,78 @@
+version: 2
+
+updates:
+  # --------------------------------------------------------------------------
+  # Gradle dependencies (gradle/libs.versions.toml + build scripts)
+  #
+  # Grouped so that a Compose BOM bump arrives as one reviewable PR instead of
+  # eleven. AGP / Kotlin / KSP are deliberately NOT grouped with anything: they
+  # have to move together with the Compose compiler and Hilt, and that decision
+  # needs a human plus a green instrumented run.
+  # --------------------------------------------------------------------------
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tehran
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - gradle
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      compose:
+        patterns:
+          - "androidx.compose*"
+      androidx:
+        patterns:
+          - "androidx.*"
+        exclude-patterns:
+          - "androidx.compose*"
+          - "androidx.room*"
+          - "androidx.hilt*"
+      room:
+        patterns:
+          - "androidx.room*"
+      di:
+        patterns:
+          - "com.google.dagger*"
+          - "androidx.hilt*"
+      network:
+        patterns:
+          - "com.squareup.retrofit2*"
+          - "com.squareup.okhttp3*"
+          - "org.jetbrains.kotlinx:kotlinx-serialization*"
+    ignore:
+      # Deprecated upstream and stuck on an alpha: replacing it is an app-code
+      # decision, not a version bump (docs/BUILD_CI_AUDIT.md, follow-up 1).
+      - dependency-name: "androidx.security:security-crypto"
+
+  # --------------------------------------------------------------------------
+  # GitHub Actions
+  #
+  # Every third-party action is pinned to a commit SHA, which is exactly the
+  # thing a human will never update by hand. Dependabot rewrites the SHA and the
+  # trailing version comment together.
+  # --------------------------------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tehran
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions:
+        patterns:
+          - "*"

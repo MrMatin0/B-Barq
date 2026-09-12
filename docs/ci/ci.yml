@@ -1,0 +1,176 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+# Least privilege by default. Nothing in this workflow writes anything except
+# the dependency-graph job, which asks for exactly what it needs.
+permissions:
+  contents: read
+
+# A superseded PR run is worthless: kill it and start over.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "17"
+  JAVA_DISTRIBUTION: temurin
+  GRADLE_FLAGS: "--stacktrace"
+
+jobs:
+  build:
+    name: Assemble, test and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Runs before anything executes gradlew: a tampered wrapper jar would
+      # otherwise run arbitrary code with this job's token.
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # Replaces setup-java's `cache: gradle`: configuration-cache aware,
+      # writes a job summary, cleans stale entries.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        with:
+          # Only master writes the shared cache; PR runs read it.
+          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
+          add-job-summary: always
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Assemble debug
+        run: ./gradlew assembleDebug ${{ env.GRADLE_FLAGS }}
+
+      - name: Unit tests
+        run: ./gradlew test ${{ env.GRADLE_FLAGS }}
+
+      # Own step so a layering regression is named rather than buried in `check`.
+      - name: Layering checks
+        if: ${{ !cancelled() }}
+        run: ./gradlew verifyDomainPurity reportUiLayerLeaks ${{ env.GRADLE_FLAGS }}
+
+      # Runs even when the tests failed: two independent signals beat one.
+      - name: Android Lint
+        if: ${{ !cancelled() }}
+        run: ./gradlew lint ${{ env.GRADLE_FLAGS }}
+
+      # Pure reporting: never fails the job, so `|| true` everywhere it counts.
+      - name: Summarise reports
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          shopt -s globstar nullglob
+
+          attr() { sed -n "s/.*<testsuite[^>]*$1=\"\([0-9]*\)\".*/\1/p" "$2" | head -1; }
+
+          {
+            echo "## Unit tests"
+            results=(app/build/test-results/**/TEST-*.xml)
+            if [ ${#results[@]} -eq 0 ]; then
+              echo "No test results found."
+            else
+              total=0; failures=0; errors=0; skipped=0
+              for f in "${results[@]}"; do
+                total=$(( total + $(attr tests "$f") ))
+                failures=$(( failures + $(attr failures "$f") ))
+                errors=$(( errors + $(attr errors "$f") ))
+                skipped=$(( skipped + $(attr skipped "$f") ))
+              done
+              echo "| tests | failures | errors | skipped |"
+              echo "|---|---|---|---|"
+              echo "| $total | $failures | $errors | $skipped |"
+            fi
+
+            echo
+            echo "## Android Lint"
+            lint_reports=(app/build/reports/lint-results-*.xml)
+            if [ ${#lint_reports[@]} -eq 0 ]; then
+              echo "No lint report found."
+            else
+              for f in "${lint_reports[@]}"; do
+                e=$(grep -c 'severity="Error"' "$f" || true)
+                w=$(grep -c 'severity="Warning"' "$f" || true)
+                echo "- \`$(basename "$f")\`: ${e:-0} error(s), ${w:-0} warning(s)"
+              done
+            fi
+
+            echo
+            echo "## Layering"
+            for f in app/build/reports/layering/*.txt; do
+              echo "### $(basename "$f")"
+              echo '```'
+              cat "$f"
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ github.run_number }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            app/build/reports/**
+            app/build/test-results/**
+
+      # So a reviewer can install the branch without building it.
+      - name: Upload debug APK
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-${{ github.run_number }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: app/build/outputs/apk/debug/*.apk
+
+  dependency-graph:
+    name: Submit dependency graph
+    # Master only: submission writes to the repository's dependency graph, so it
+    # gets its own job instead of granting contents: write to the build job.
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle with dependency submission
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        with:
+          cache-read-only: true
+          dependency-graph: generate-and-submit
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Resolve dependencies
+        run: ./gradlew :app:dependencies --configuration releaseRuntimeClasspath ${{ env.GRADLE_FLAGS }}

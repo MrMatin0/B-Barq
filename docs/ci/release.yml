@@ -1,0 +1,213 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  # Manual runs are supported, but only when the selected ref is a v* tag: see
+  # the first step. Dispatching from a branch used to create a release literally
+  # tagged `master`.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel a release in flight: a half-uploaded release is worse than a
+# queued one. Two tags pushed together are serialised instead.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  JAVA_VERSION: "17"
+  JAVA_DISTRIBUTION: temurin
+  GRADLE_FLAGS: "--stacktrace"
+
+jobs:
+  release:
+    name: Build and publish ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      # Needed to create the release and upload its assets. Granted here rather
+      # than workflow-wide.
+      contents: write
+
+    steps:
+      - name: Require a v* tag
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          echo "::error::This workflow must run on a v* tag, got '${GITHUB_REF}'."
+          echo "Tag the commit first:  git tag v3.74 && git push origin v3.74"
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so the release notes can span the previous tag.
+          fetch-depth: 0
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        with:
+          # A release must never be the run that populates the cache.
+          cache-read-only: true
+          add-job-summary: always
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # Fails before anything is built, and before any secret is decoded.
+      - name: Reconcile tag with versionName
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          expected="${tag#v}"
+          actual="$(./gradlew -q --console=plain :app:printVersionName | tail -1 | tr -d '[:space:]')"
+          code="$(./gradlew -q --console=plain :app:printVersionCode | tail -1 | tr -d '[:space:]')"
+          echo "tag=$tag  versionName=$actual  versionCode=$code"
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::Tag '$tag' does not match versionName '$actual'."
+            echo "Update bbarq.versionMajor / bbarq.versionPatch in gradle.properties,"
+            echo "or push the tag that matches: v$actual"
+            exit 1
+          fi
+          echo "VERSION_NAME=$actual" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$code" >> "$GITHUB_ENV"
+
+      - name: Unit tests
+        run: ./gradlew test ${{ env.GRADLE_FLAGS }}
+
+      - name: Android Lint
+        run: ./gradlew lint ${{ env.GRADLE_FLAGS }}
+
+      # The keystore only exists inside this job, in RUNNER_TEMP, and is deleted
+      # in the always() step at the end.
+      - name: Decode upload keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::error::Secret KEYSTORE_BASE64 is not set. See docs/BUILDING.md"
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "${RUNNER_TEMP}/upload-keystore.jks"
+          if [ ! -s "${RUNNER_TEMP}/upload-keystore.jks" ]; then
+            echo "::error::KEYSTORE_BASE64 decoded to an empty file."
+            exit 1
+          fi
+          echo "KEYSTORE_FILE=${RUNNER_TEMP}/upload-keystore.jks" >> "$GITHUB_ENV"
+
+      - name: Build signed APK and AAB
+        env:
+          # KEYSTORE_FILE comes from the previous step via GITHUB_ENV.
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleRelease bundleRelease ${{ env.GRADLE_FLAGS }}
+
+      # The whole point of this rewrite: prove the artifact is not debug-signed.
+      - name: Verify APK signature
+        run: |
+          set -euo pipefail
+          apk=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          if [ -z "$apk" ]; then
+            echo "::error::No release APK was produced."
+            exit 1
+          fi
+          apksigner=$(find "${ANDROID_HOME}/build-tools" -name apksigner | sort -V | tail -1)
+          echo "Using $apksigner"
+          "$apksigner" verify --verbose --print-certs "$apk" | tee signer.txt
+          if grep -qi 'CN=Android Debug' signer.txt; then
+            echo "::error::Release APK is signed with the DEBUG key. Refusing to publish."
+            exit 1
+          fi
+          {
+            echo "## Signing"
+            echo '```'
+            grep -i -E 'Signer #1 certificate (DN|SHA-256)' signer.txt || cat signer.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Collect artifacts and checksums
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp app/build/outputs/apk/release/*.apk "dist/B-Barq-${VERSION_NAME}.apk"
+          cp app/build/outputs/bundle/release/*.aab "dist/B-Barq-${VERSION_NAME}.aab"
+          cd dist
+          sha256sum ./*.apk ./*.aab > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Write release notes header
+        run: |
+          set -euo pipefail
+          {
+            echo "**versionName** \`${VERSION_NAME}\` · **versionCode** \`${VERSION_CODE}\`"
+            echo
+            echo "### Verify your download"
+            echo
+            echo '```'
+            cat dist/SHA256SUMS.txt
+            echo '```'
+            echo
+            echo "> [!IMPORTANT]"
+            echo "> Releases before this one were signed with a debug key. If you"
+            echo "> installed an earlier APK, uninstall it before installing this"
+            echo "> one: Android refuses an update when the signing key changes."
+            echo
+          } > dist/RELEASE_NOTES.md
+
+      - name: Publish release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: B-Barq ${{ env.VERSION_NAME }}
+          body_path: dist/RELEASE_NOTES.md
+          # Prepends the body above GitHub's generated commit-range notes.
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          # If the build produced nothing, fail instead of creating an empty release.
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.apk
+            dist/*.aab
+            dist/SHA256SUMS.txt
+
+      # Deliberately NOT a release asset: mapping.txt is a maintainer tool, and
+      # publishing it hands out a map of the obfuscated build for free.
+      - name: Upload R8 mapping
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: r8-mapping-${{ github.ref_name }}
+          if-no-files-found: error
+          retention-days: 90
+          path: app/build/outputs/mapping/release/**
+
+      - name: Upload build reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-reports-${{ github.ref_name }}
+          if-no-files-found: ignore
+          retention-days: 30
+          path: |
+            app/build/reports/**
+            app/build/test-results/**
+
+      - name: Remove keystore
+        if: ${{ always() }}
+        run: |
+          rm -f "${RUNNER_TEMP}/upload-keystore.jks" signer.txt

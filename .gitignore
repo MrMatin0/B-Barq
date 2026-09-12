@@ -1,20 +1,47 @@
+# --- Gradle / build output --------------------------------------------------
+.gradle/
+**/build/
+!src/**/build/
+
+# AGP writes these next to the module when a release build runs; they are
+# generated output and must never be tracked (see docs/BUILD_CI_AUDIT.md #5).
+app/release/
+app/debug/
+**/baselineProfiles/
+
+# Packaged artifacts
+*.apk
+*.aab
+*.aar
+*.ap_
+*.dex
+*.dm
+
+# --- Local machine configuration -------------------------------------------
+local.properties
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
 .DS_Store
-/build
 /captures
 .externalNativeBuild
 .cxx
-local.properties
 
-# Signing material: never commit these
+# --- IDE -------------------------------------------------------------------
+.idea/
+
+# --- Signing material: never commit these ----------------------------------
 keystore.properties
 *.jks
 *.keystore
+*.p12
+*.pepk
+
+# --- Room ------------------------------------------------------------------
+# app/schemas/*.json IS tracked (migration review + tests depend on it).
+# The scratch databases the migration tests create are not.
+app/schemas/*.db
+app/schemas/*.db-*
+
+# --- Reports ---------------------------------------------------------------
+lint-results*.html
+lint-results*.xml
+lint-results*.sarif

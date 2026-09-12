@@ -33,22 +33,49 @@ The service checks the outage source every hour, displays the latest schedules f
 
 ## Installation
 1. Download the latest APK from [Releases](https://github.com/alijafari-gd/B-Barq/releases).
-2. Install it on your device.
-3. Sign in, add your place(s), grant permissions, and start the service.
+2. Download `SHA256SUMS.txt` from the same release and check the download is intact:
+
+   ```bash
+   sha256sum -c SHA256SUMS.txt
+   ```
+
+3. Install the APK on your device.
+4. Sign in, add your place(s), grant permissions, and start the service.
+
+> [!IMPORTANT]
+> Every release published before now was signed with a debug key by mistake.
+> Releases are signed with the real upload key from now on, and Android refuses
+> to update an app whose signing key changed. If you installed an earlier APK,
+> **uninstall it first, then install the new one** (uninstalling clears the
+> app's saved data).
+
+## Building from source
+
+```bash
+git clone https://github.com/MrMatin0/B-Barq.git
+cd B-Barq
+./gradlew assembleDebug
+```
+
+You need JDK 17 and Android SDK 36; Gradle provisions the JDK for you if it is
+missing. [docs/BUILDING.md](docs/BUILDING.md) covers the full build, how to
+generate a signing key, and how to cut a release.
 
 ## Privacy
 B-Barq does not collect or share personal information such as your name, phone number, or bill ID.
 
 The app stores your saved data locally on your device. Requests for electricity outage information are made directly from the app to the relevant service.
 
-B-Barq currently includes Yandex AppMetrica, for finding errors and bugs. It may collect basic device and usage information according to its own privacy policy. B-Barq does not intentionally send personal information such as phone numbers or bill IDs to AppMetrica.
+The app bundles no analytics or tracking SDK. (Older versions used Yandex AppMetrica; that dependency has been removed.)
 
-AppMetrica may be removed in a future update if it is no longer needed.
 ## Contribution
 Contributions are welcome! If you have ideas, improvements, or bug fixes, feel free to:
 * Fork the repository
 * Create a new branch
 * Submit a pull request
+
+Run `./gradlew assembleDebug test lint` before opening a pull request — the same
+three tasks run in CI on every PR.
 
 ## TODO (Upcoming Features)
 * Automatic Bill ID detection based on the user's location
