@@ -44,7 +44,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.repository.PlaceOutage
 import com.aliJafari.bbarq.ui.components.GlassCard
@@ -142,11 +141,7 @@ fun OutageCard(
                 StatusPill(status = status)
             }
 
-            // Countdown headline with a soft halo behind it while active.
-            OutageHeadline(
-                text = headline,
-                urgency = status.urgency,
-            )
+            OutageHeadline(text = headline, urgency = status.urgency)
 
             if (progress != null) {
                 LinearProgressIndicator(
@@ -187,7 +182,11 @@ fun OutageCard(
                 }
                 MetaChip(
                     iconRes = R.drawable.ic_bolt,
-                    text = stringResource(R.string.schedule_time_range, stringResource(R.string.label_duration), durationText),
+                    text = stringResource(
+                        R.string.schedule_time_range,
+                        stringResource(R.string.label_duration),
+                        durationText,
+                    ),
                 )
             }
 
@@ -349,6 +348,3 @@ private fun ShareRow(
         )
     }
 }
-
-/** Kept out of the public surface: 1dp helper for previews of the stripe. */
-private val hairline = 1.dp

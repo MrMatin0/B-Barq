@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -82,7 +81,7 @@ fun OtpCodeField(
 
         BasicTextField(
             value = value,
-            onValueChange = { onValueChange(it) },
+            onValueChange = onValueChange,
             modifier = Modifier
                 .matchParentSize()
                 .focusRequester(focusRequester),

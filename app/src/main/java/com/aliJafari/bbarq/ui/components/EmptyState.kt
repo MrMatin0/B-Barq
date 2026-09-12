@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -47,15 +48,15 @@ fun BBarqEmptyState(
     onAction: (() -> Unit)? = null,
 ) {
     var appeared by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (appeared) 1f else 0.82f, label = "emptyScale")
-    val alpha by animateFloatAsState(if (appeared) 1f else 0f, label = "emptyAlpha")
+    val badgeScale by animateFloatAsState(if (appeared) 1f else 0.82f, label = "emptyScale")
+    val contentAlpha by animateFloatAsState(if (appeared) 1f else 0f, label = "emptyAlpha")
     LaunchedEffect(Unit) { appeared = true }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = Spacing.xxxl, horizontal = Spacing.lg)
-            .graphicsLayer { this.alpha = alpha },
+            .alpha(contentAlpha),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
@@ -63,8 +64,8 @@ fun BBarqEmptyState(
             modifier = Modifier
                 .size(Spacing.huge * 2)
                 .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
+                    scaleX = badgeScale
+                    scaleY = badgeScale
                 }
                 .clip(CircleShape)
                 .background(
