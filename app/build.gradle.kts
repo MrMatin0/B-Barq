@@ -3,8 +3,10 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp")
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 // Release signing material can come from either a local (git-ignored)
@@ -101,6 +103,18 @@ android {
         compose = true
         buildConfig = true
     }
+    sourceSets {
+        // Room writes its exported schemas here (see the ksp block below); the
+        // migration tests read them back as instrumentation assets.
+        getByName("androidTest") {
+            assets.srcDir("$projectDir/schemas")
+        }
+    }
+}
+
+ksp {
+    // Committed schemas are what make Room migrations reviewable and testable.
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -111,23 +125,45 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
+
+    // Dependency injection
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
+    // Background work
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Persistence
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.security.crypto)
+
+    // Networking & serialization
+    implementation(libs.okhttp)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
+
+    // Jalali calendar conversion
+    implementation(libs.persian.date)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
-    implementation("io.appmetrica.analytics:analytics:7.10.0")
-
-    implementation(libs.androidx.room.runtime)
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.work.testing)
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)
-    ksp(libs.androidx.room.compiler)
 
-    implementation("com.github.samanzamani:PersianDate:1.7.1")
-
-    implementation(libs.okhttp)
-
-
-    val composeBom = platform("androidx.compose:compose-bom:2025.05.00" )
+    val composeBom = platform("androidx.compose:compose-bom:2025.05.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
     implementation("androidx.compose.material3:material3")
