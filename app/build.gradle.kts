@@ -107,7 +107,10 @@ android {
         // Room writes its exported schemas here (see the ksp block below); the
         // migration tests read them back as instrumentation assets.
         getByName("androidTest") {
-            assets.srcDir("$projectDir/schemas")
+            val schemaDir = file("$projectDir/schemas")
+            if (schemaDir.exists()) {
+                assets.srcDir(schemaDir)
+            }
         }
     }
 }
