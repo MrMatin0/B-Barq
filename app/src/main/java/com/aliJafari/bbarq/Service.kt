@@ -19,6 +19,7 @@ import com.aliJafari.bbarq.data.repository.OutageRepository
 import com.aliJafari.bbarq.data.repository.PlaceOutage
 import com.aliJafari.bbarq.data.repository.PlaceRepository
 import com.aliJafari.bbarq.ui.main.MainActivity
+import com.aliJafari.bbarq.ui.widget.publishOutagesToWidget
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
 import com.aliJafari.bbarq.utils.ReminderOffset
@@ -103,6 +104,13 @@ class ForegroundService : Service() {
             val note = errors.joinToString("\n").let { if (it.isBlank()) "" else "$it\n" }
             scheduleReminder(schedules)
             updateNotification(schedules, note)
+
+            // Keeps the home screen honest while the app is closed. A run where
+            // everything failed says nothing, so it leaves the snapshot alone
+            // rather than replacing real data with an empty "all clear".
+            if (errors.isEmpty() || schedules.isNotEmpty()) {
+                publishOutagesToWidget(applicationContext, schedules)
+            }
         }
     }
 

@@ -11,7 +11,7 @@ import com.aliJafari.bbarq.data.local.dao.PlaceDao
 import com.aliJafari.bbarq.data.model.Outage
 import com.aliJafari.bbarq.data.model.Place
 
-@Database(entities = [Outage::class, Place::class], version = 3, exportSchema = true)
+@Database(entities = [Outage::class, Place::class], version = 4, exportSchema = true)
 abstract class ADatabase : RoomDatabase() {
     abstract fun OutageDao(): OutageDao
     abstract fun PlaceDao(): PlaceDao
@@ -40,6 +40,22 @@ abstract class ADatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE outages ADD COLUMN outageTime TEXT")
             }
         }
+
+        /**
+         * Adds the user-controlled place ordering.
+         *
+         * Existing rows are backfilled from `id`, which is exactly the order
+         * they were displayed in before, so upgrading does not shuffle anyone's
+         * list. [com.aliJafari.bbarq.data.repository.PlaceRepository] densifies
+         * the values on the first reorder.
+         */
+        val migration3To4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE places ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE places SET sortOrder = id")
+            }
+        }
+
         fun getInstance(context: Context): ADatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -47,7 +63,7 @@ abstract class ADatabase : RoomDatabase() {
                     ADatabase::class.java,
                     "bbarq.db"
                 )
-                    .addMigrations(migration1To2,migration2To3)
+                    .addMigrations(migration1To2, migration2To3, migration3To4)
                     .build()
                     .also { instance = it }
             }

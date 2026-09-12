@@ -331,6 +331,10 @@ fun PlaceEditorSheet(
                             colorKey = colorKey,
                             iconKey = iconKey,
                             reminderOffsetsMask = if (remindersEnabled) reminderMask else 0,
+                            // Not editable here, but it must survive the round
+                            // trip: rebuilding it as 0 would drag the place to
+                            // the top of the list on every save.
+                            sortOrder = place?.sortOrder ?: 0,
                         ),
                     )
                 },

@@ -1,11 +1,15 @@
 package com.aliJafari.bbarq.utils
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.Build
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
@@ -71,6 +75,35 @@ suspend fun shareSchedule(
     )
 }
 
+/**
+ * Puts the outage on the clipboard as plain text.
+ *
+ * Sharing used to be all-or-nothing: it rendered a bitmap and opened the system
+ * chooser, which is the wrong shape for pasting a schedule into a group chat
+ * that is already open. Android 13 and newer show their own paste confirmation,
+ * so the toast is only needed below that.
+ */
+fun copyScheduleToClipboard(
+    context: Context,
+    schedule: PlaceOutage,
+) {
+    val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
+    clipboard.setPrimaryClip(
+        ClipData.newPlainText(
+            context.getString(R.string.share_clip_label),
+            generateShareText(context, schedule),
+        )
+    )
+
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        Toast.makeText(
+            context,
+            context.getString(R.string.copied_to_clipboard),
+            Toast.LENGTH_SHORT,
+        ).show()
+    }
+}
+
 fun generateShareText(
     context: Context,
     schedule: PlaceOutage
@@ -86,7 +119,7 @@ fun generateShareText(
             ?: context.getString(R.string.value_not_available),
         schedule.outage.address
             ?: context.getString(R.string.value_not_available)
-    )
+    ).toPersianDigitsIfNeeded()
 }
 
 private suspend fun createScheduleBitmap(

@@ -140,15 +140,28 @@ fun PreferencesScreen(
                     textAlign = TextAlign.Center,
                 )
             }
-        }
+        } else {
+            // One lazy item on purpose: the reorderable column translates its
+            // own rows, which lazy layout would otherwise reposition mid-drag.
+            item(key = "places-list") {
+                ReorderablePlaceList(
+                    places = state.places,
+                    onMove = { from, to -> onEvent(PreferencesEvent.MovePlace(from, to)) },
+                    onEdit = { onEvent(PreferencesEvent.EditPlace(it)) },
+                    onDelete = { onEvent(PreferencesEvent.DeletePlace(it)) },
+                )
+            }
 
-        items(state.places, key = { it.id }) { place ->
-            PlaceCard(
-                place = place,
-                onEditClick = { onEvent(PreferencesEvent.EditPlace(place)) },
-                onDeleteClick = { onEvent(PreferencesEvent.DeletePlace(place)) },
-                modifier = Modifier.animateItem(),
-            )
+            if (state.canReorderPlaces) {
+                item(key = "reorder-hint") {
+                    PersianText(
+                        text = stringResource(R.string.reorder_places_hint),
+                        modifier = Modifier.padding(horizontal = Spacing.xs),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
 
         item(key = "add-place") {

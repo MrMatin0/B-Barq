@@ -28,13 +28,21 @@ import com.aliJafari.bbarq.ui.theme.Spacing
 import com.aliJafari.bbarq.ui.theme.placeColorOption
 import com.aliJafari.bbarq.utils.ReminderOffset
 
-/** A tracked place, with its identity colour bleeding into the card. */
+/**
+ * A tracked place, with its identity colour bleeding into the card.
+ *
+ * [dragHandle] is an optional leading slot owned by the caller, which is what
+ * carries the reorder gesture. It stays a slot rather than a boolean so the card
+ * itself knows nothing about dragging, and so a single place renders without a
+ * handle it could not use.
+ */
 @Composable
 fun PlaceCard(
     place: Place,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
+    dragHandle: (@Composable () -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     val activeReminders = ReminderOffset.entries.count { place.reminderOffsetsMask and it.bit != 0 }
@@ -50,6 +58,8 @@ fun PlaceCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
+            dragHandle?.invoke()
+
             PlaceAvatar(colorKey = place.colorKey, iconKey = place.iconKey)
 
             Column(

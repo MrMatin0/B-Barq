@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  updatePeriodMillis is 30 minutes because that is the floor the platform
+  actually honours. It is only a safety net: the app pushes an update from
+  ScheduleViewModel and ForegroundService every time a fetch succeeds, which is
+  what keeps the countdown honest between host refreshes.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minWidth="180dp"
+    android:previewImage="@mipmap/ic_launcher"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

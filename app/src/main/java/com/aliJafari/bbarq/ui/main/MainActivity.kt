@@ -33,6 +33,7 @@ import com.aliJafari.bbarq.ui.screens.preferences.PreferencesViewModel
 import com.aliJafari.bbarq.ui.screens.schedule.ScheduleEffect
 import com.aliJafari.bbarq.ui.screens.schedule.ScheduleViewModel
 import com.aliJafari.bbarq.ui.theme.BBarqTheme
+import com.aliJafari.bbarq.utils.copyScheduleToClipboard
 import com.aliJafari.bbarq.utils.shareSchedule
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -114,6 +115,9 @@ class MainActivity : AppCompatActivity() {
                         when (effect) {
                             is ScheduleEffect.ShareSchedule ->
                                 shareSchedule(this@MainActivity, effect.schedule)
+
+                            is ScheduleEffect.CopySchedule ->
+                                copyScheduleToClipboard(this@MainActivity, effect.schedule)
 
                             ScheduleEffect.OpenPlaceEditor -> {
                                 mainViewModel.selectTab(MainTab.Preferences)

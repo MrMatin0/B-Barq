@@ -14,7 +14,10 @@ data class PreferencesUiState(
     val isEditorVisible: Boolean = false,
     val isLogoutDialogVisible: Boolean = false,
     val versionName: String = BuildConfig.VERSION_NAME,
-)
+) {
+    /** Reordering only means something once there are two rows to swap. */
+    val canReorderPlaces: Boolean get() = places.size > 1
+}
 
 sealed interface PreferencesEvent {
     data object AddPlace : PreferencesEvent
@@ -26,6 +29,9 @@ sealed interface PreferencesEvent {
     data class EditPlace(val place: Place) : PreferencesEvent
     data class DeletePlace(val place: Place) : PreferencesEvent
     data class SavePlace(val place: Place) : PreferencesEvent
+
+    /** Positions within the currently displayed list, not place ids. */
+    data class MovePlace(val fromIndex: Int, val toIndex: Int) : PreferencesEvent
     data class SetDarkMode(val enabled: Boolean) : PreferencesEvent
     data class SetLanguage(val language: AppLanguage) : PreferencesEvent
 }
