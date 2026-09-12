@@ -89,7 +89,7 @@
     <string name="account_section_title">Account</string>
     <string name="language_title">Language</string>
     <string name="action_logout_tip">Can recover from errors caused by an expired token</string>
-    <string name="share_outage_text" translatable="false">خاموشی برق در %1$s (%5$s) در تاریخ %2$s از ساعت %3$s تا %4$s برنامه‌ریزی شده است.</string>
+    <string name="share_outage_text">A power outage is scheduled for %1$s (%5$s) on %2$s, from %3$s to %4$s.</string>
     <string name="login_title">Welcome !</string>
     <string name="login_subtitle">Sign in to your Barghe Man account .</string>
     <string name="logout_subtitle">Are you sure you want to log out of your account?</string>
@@ -153,4 +153,23 @@
     <string name="login_change_number">Change number</string>
     <string name="login_success_title">You\'re in</string>
     <string name="login_success_subtitle">Restart the app to start tracking outages</string>
+
+    <!-- Quick share -->
+    <string name="action_copy">Copy</string>
+    <string name="copied_to_clipboard">Schedule copied</string>
+    <string name="share_clip_label">Outage schedule</string>
+
+    <!-- Place reordering -->
+    <string name="reorder_place">Reorder place</string>
+    <string name="reorder_places_hint">Hold the handle on a place to drag it into a new position.</string>
+
+    <!-- Home screen widget -->
+    <string name="widget_label">Upcoming Outages</string>
+    <string name="widget_description">Next scheduled outage for each of your places, at a glance.</string>
+    <string name="widget_signed_out">Sign in to start tracking outages</string>
+    <string name="widget_no_places">Add a place in the app</string>
+    <string name="widget_all_clear">No outages scheduled</string>
+    <string name="widget_never_synced">Open the app to sync</string>
+    <string name="widget_synced_at">Synced %1$s</string>
+    <string name="widget_more_places">+%1$d more</string>
 </resources>

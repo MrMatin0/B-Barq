@@ -89,6 +89,7 @@
     <string name="account_section_title">اکانت</string>
     <string name="language_title">زبان</string>
     <string name="share">اشتراک گذاری</string>
+    <string name="share_outage_text">خاموشی برق در %1$s (%5$s) در تاریخ %2$s از ساعت %3$s تا %4$s برنامه‌ریزی شده است.</string>
     <string name="login_title">خوش اومدی !</string>
     <string name="login_subtitle">وارد حساب برق‌من شو .</string>
     <string name="logout_subtitle">از خروج از حساب مطمئن هستی ؟</string>
@@ -145,4 +146,23 @@
     <string name="login_change_number">تغییر شماره</string>
     <string name="login_success_title">وارد شدی</string>
     <string name="login_success_subtitle">برای شروع پایش، برنامه را دوباره اجرا کن</string>
+
+    <!-- اشتراک‌گذاری سریع -->
+    <string name="action_copy">کپی</string>
+    <string name="copied_to_clipboard">برنامه قطعی کپی شد</string>
+    <string name="share_clip_label">برنامه قطعی برق</string>
+
+    <!-- جابه‌جایی مکان‌ها -->
+    <string name="reorder_place">جابه‌جایی مکان</string>
+    <string name="reorder_places_hint">دستگیره یک مکان را نگه دار و آن را جابه‌جا کن.</string>
+
+    <!-- ویجت صفحه اصلی -->
+    <string name="widget_label">قطعی‌های پیش رو</string>
+    <string name="widget_description">قطعی بعدی هر یک از مکان‌های تو، در یک نگاه.</string>
+    <string name="widget_signed_out">برای پایش قطعی‌ها وارد حساب شو</string>
+    <string name="widget_no_places">در برنامه یک مکان اضافه کن</string>
+    <string name="widget_all_clear">قطعی‌ای در برنامه نیست</string>
+    <string name="widget_never_synced">برای همگام‌سازی برنامه را باز کن</string>
+    <string name="widget_synced_at">همگام‌سازی %1$s</string>
+    <string name="widget_more_places">%1$d مورد دیگر+</string>
 </resources>
