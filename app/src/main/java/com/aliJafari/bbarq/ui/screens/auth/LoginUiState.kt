@@ -7,10 +7,12 @@ const val PHONE_LENGTH = 11
 
 /**
  * Length of the SMS code, and the only place to change it.
+ * The provider sends a 6 digit code; keeping this in sync matters because the
+ * value both truncates the typed input and sizes the pin field.
  * Verification stays enabled for any non-empty code so a different length from
  * the provider can never lock a user out of the button.
  */
-const val OTP_LENGTH = 5
+const val OTP_LENGTH = 6
 
 enum class LoginStep { Phone, Code, Success }
 
