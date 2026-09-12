@@ -23,11 +23,30 @@ val appVersionCode = versionMajor * 10000 + versionPatch
 val appVersionName = "$versionMajor.$versionPatch"
 
 // ---------------------------------------------------------------------------
-// Release signing material
+// Release signing
 //
-// Either a local (git-ignored) keystore.properties file or environment
-// variables in CI. Unchanged in this commit; hardened in the next one.
+// Material comes from either a local, git-ignored keystore.properties or from
+// environment variables (which is how CI passes repository secrets):
+//
+//   keystore.properties        environment variable
+//   -------------------        --------------------
+//   storeFile                  KEYSTORE_FILE
+//   storePassword              KEYSTORE_PASSWORD
+//   keyAlias                   KEY_ALIAS
+//   keyPassword                KEY_PASSWORD
+//
+// Rules, in order of importance:
+//   1. On CI, a release or publish task without a real key FAILS. Publishing a
+//      debug-signed artifact is worse than publishing nothing.
+//   2. Locally, `./gradlew assembleRelease` without a key still works so that
+//      contributors can test a minified build, but the fallback is loud.
+//   3. A half-configured key fails immediately: a missing secret should not
+//      degrade into a debug-signed build.
+//
+// See docs/BUILDING.md for how to generate the keystore and the secrets.
 // ---------------------------------------------------------------------------
+val isCiBuild = providers.environmentVariable("CI").map { it.isNotBlank() }.getOrElse(false)
+
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) {
@@ -44,15 +63,60 @@ val releaseStorePassword = signingValue("storePassword", "KEYSTORE_PASSWORD")
 val releaseKeyAlias = signingValue("keyAlias", "KEY_ALIAS")
 val releaseKeyPassword = signingValue("keyPassword", "KEY_PASSWORD")
 
+val signingInputs = linkedMapOf(
+    "storeFile / KEYSTORE_FILE" to releaseStorePath,
+    "storePassword / KEYSTORE_PASSWORD" to releaseStorePassword,
+    "keyAlias / KEY_ALIAS" to releaseKeyAlias,
+    "keyPassword / KEY_PASSWORD" to releaseKeyPassword,
+)
+val missingSigningInputs = signingInputs.filterValues { it == null }.keys
+
+// Some but not all values present: always a mistake, never a reason to fall back.
+if (missingSigningInputs.isNotEmpty() && missingSigningInputs.size < signingInputs.size) {
+    throw GradleException(
+        "Release signing is half configured. Missing: " +
+            missingSigningInputs.joinToString(", ") +
+            ". Provide all four values or none of them (see docs/BUILDING.md).",
+    )
+}
+
 val releaseKeystoreFile = releaseStorePath?.let { path ->
     val asIs = file(path)
     if (asIs.exists()) asIs else rootProject.file(path).takeIf { it.exists() }
 }
 
-val hasReleaseSigning = releaseKeystoreFile != null &&
-    releaseStorePassword != null &&
-    releaseKeyAlias != null &&
-    releaseKeyPassword != null
+if (releaseStorePath != null && releaseKeystoreFile == null) {
+    throw GradleException(
+        "Release keystore not found at '$releaseStorePath' (resolved against both " +
+            "app/ and the repository root). Fix storeFile / KEYSTORE_FILE.",
+    )
+}
+
+val hasReleaseSigning = releaseKeystoreFile != null && missingSigningInputs.isEmpty()
+
+// Which tasks were asked for, so that `assembleDebug` and `test` stay usable on
+// CI without any signing material at all.
+val releaseTaskRequested = gradle.startParameter.taskNames.any { requested ->
+    val taskName = requested.substringAfterLast(':').lowercase()
+    taskName.contains("release") || taskName.startsWith("bundle") || taskName.startsWith("publish")
+}
+
+val unsignedReleaseBanner = """
+    ============================================================================
+    RELEASE BUILD IS NOT SIGNED WITH THE UPLOAD KEY
+
+    No release signing material was found, so this build falls back to the
+    DEBUG keystore. The resulting APK:
+
+      * must never be published or attached to a GitHub Release,
+      * cannot be installed as an upgrade over a properly signed build,
+      * is signed with a key every developer machine already has.
+
+    To build a real release, set KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and
+    KEY_PASSWORD, or create a keystore.properties in the repository root.
+    See docs/BUILDING.md.
+    ============================================================================
+""".trimIndent()
 
 // Room's exported schemas: review input and test fixture, tracked in git.
 val roomSchemaDir = layout.projectDirectory.dir("schemas")
@@ -79,7 +143,10 @@ android {
                 storePassword = releaseStorePassword
                 keyAlias = releaseKeyAlias
                 keyPassword = releaseKeyPassword
-                enableV1Signing = true
+                // minSdk is 24, so every supported device verifies v2 or better.
+                // v1 (JAR signing) only matters below API 24 and is what Janus
+                // (CVE-2017-13156) attacks, so it stays off.
+                enableV1Signing = false
                 enableV2Signing = true
                 enableV3Signing = true
                 enableV4Signing = true
@@ -97,15 +164,29 @@ android {
         }
 
         release {
-            signingConfig = if (hasReleaseSigning) {
-                signingConfigs.getByName("release")
-            } else {
-                logger.warn(
-                    "No release signing config found (keystore.properties or " +
-                        "KEYSTORE_FILE/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD). " +
-                        "Falling back to the debug keystore: do not publish this build.",
+            signingConfig = when {
+                hasReleaseSigning -> signingConfigs.getByName("release")
+
+                isCiBuild && releaseTaskRequested -> throw GradleException(
+                    """
+                    Refusing to build a release without the upload key on CI.
+
+                    Add these repository secrets and pass them to the build
+                    (see .github/workflows/release.yml and docs/BUILDING.md):
+
+                      KEYSTORE_BASE64    base64 of the .jks, decoded to KEYSTORE_FILE
+                      KEYSTORE_PASSWORD
+                      KEY_ALIAS
+                      KEY_PASSWORD
+
+                    Missing: ${missingSigningInputs.joinToString(", ")}
+                    """.trimIndent(),
                 )
-                signingConfigs.getByName("debug")
+
+                else -> {
+                    logger.warn(unsignedReleaseBanner)
+                    signingConfigs.getByName("debug")
+                }
             }
 
             isMinifyEnabled = true
