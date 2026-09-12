@@ -15,8 +15,8 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
-import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
@@ -77,7 +77,7 @@ private data class WidgetViewState(
     val refreshLabel: String,
     val message: String?,
     val rows: List<WidgetRow>,
-    val hiddenCount: Int,
+    val moreLabel: String?,
 )
 
 object OutageWidget : GlanceAppWidget() {
@@ -131,6 +131,7 @@ private suspend fun buildViewState(context: Context): WidgetViewState {
                 status.urgency == ScheduleUrgency.SOON,
         )
     }
+    val hiddenCount = (active.size - rows.size).coerceAtLeast(0)
 
     return WidgetViewState(
         title = context.getString(R.string.widget_label),
@@ -149,7 +150,9 @@ private suspend fun buildViewState(context: Context): WidgetViewState {
             else -> null
         },
         rows = rows,
-        hiddenCount = (active.size - rows.size).coerceAtLeast(0),
+        moreLabel = hiddenCount
+            .takeIf { it > 0 }
+            ?.let { context.getString(R.string.widget_more_places, it).toPersianDigitsIfNeeded() },
     )
 }
 
@@ -168,7 +171,11 @@ private fun WidgetBody(state: WidgetViewState) {
                 .cornerRadius(20.dp)
                 .padding(14.dp),
         ) {
-            WidgetHeader(title = state.title, syncedLabel = state.syncedLabel, refreshLabel = state.refreshLabel)
+            WidgetHeader(
+                title = state.title,
+                syncedLabel = state.syncedLabel,
+                refreshLabel = state.refreshLabel,
+            )
             Spacer(GlanceModifier.height(10.dp))
 
             if (state.message != null) {
@@ -183,10 +190,10 @@ private fun WidgetBody(state: WidgetViewState) {
             } else {
                 LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
                     items(state.rows) { row -> OutageRow(row) }
-                    if (state.hiddenCount > 0) {
+                    state.moreLabel?.let { label ->
                         item {
                             Text(
-                                text = LocalMoreLabel.format(state.hiddenCount),
+                                text = label,
                                 style = TextStyle(
                                     color = GlanceTheme.colors.onSurfaceVariant,
                                     fontSize = 11.sp,
@@ -286,12 +293,4 @@ private fun OutageRow(row: WidgetRow) {
             maxLines = 1,
         )
     }
-}
-
-/**
- * The "+N more" label is the one string the composition needs that is not worth
- * threading through [WidgetViewState] twice, so it is formatted from the count.
- */
-private object LocalMoreLabel {
-    fun format(count: Int): String = "+$count".toPersianDigitsIfNeeded()
 }

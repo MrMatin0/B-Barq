@@ -165,6 +165,7 @@ fun ScheduleScreen(
                     schedule = schedule,
                     now = now,
                     onShare = { onEvent(ScheduleEvent.Share(schedule)) },
+                    onCopy = { onEvent(ScheduleEvent.Copy(schedule)) },
                     modifier = Modifier.animateItem(),
                 )
             }

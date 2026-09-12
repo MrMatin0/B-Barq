@@ -74,6 +74,7 @@ fun OutageCard(
     schedule: PlaceOutage,
     now: Long,
     onShare: () -> Unit,
+    onCopy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -207,7 +208,11 @@ fun OutageCard(
                 }
             }
 
-            ShareRow(accentColorKey = schedule.place.colorKey, onShare = onShare)
+            ActionRow(
+                accentColorKey = schedule.place.colorKey,
+                onShare = onShare,
+                onCopy = onCopy,
+            )
         }
     }
 }
@@ -313,38 +318,75 @@ private fun DetailRow(
     }
 }
 
+/**
+ * Share and copy, side by side.
+ *
+ * Sharing renders a bitmap and opens the chooser, which is the right call for
+ * sending an outage to someone but the wrong one for pasting it into a chat that
+ * is already open. Both paths produce the same sentence.
+ */
 @Composable
-private fun ShareRow(
+private fun ActionRow(
     accentColorKey: String,
     onShare: () -> Unit,
+    onCopy: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        CardAction(
+            iconRes = R.drawable.ic_bill,
+            label = stringResource(R.string.share),
+            accentColorKey = accentColorKey,
+            onClick = onShare,
+            modifier = Modifier.weight(1f),
+        )
+        CardAction(
+            iconRes = R.drawable.ic_copy,
+            label = stringResource(R.string.action_copy),
+            accentColorKey = accentColorKey,
+            onClick = onCopy,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun CardAction(
+    iconRes: Int,
+    label: String,
+    accentColorKey: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val accent = placeColorOption(accentColorKey).color
     val haptic = LocalHapticFeedback.current
     Row(
         modifier = modifier
-            .fillMaxWidth()
             .clip(RoundedCornerShape(Radius.md))
             .background(accent.copy(alpha = 0.12f))
             .clickable {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onShare()
+                onClick()
             }
             .padding(vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterHorizontally),
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_bill),
+            painter = painterResource(iconRes),
             contentDescription = null,
             modifier = Modifier.size(IconSize.sm),
             tint = MaterialTheme.colorScheme.onSurface,
         )
         PersianText(
-            text = stringResource(R.string.share),
+            text = label,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
         )
     }
 }
