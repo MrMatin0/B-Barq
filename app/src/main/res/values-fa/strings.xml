@@ -11,7 +11,7 @@
     <string name="current_schedule_title">برنامه فعلی :</string>
     <string name="permission_request_cta_text">رفع</string>
     <string name="allow_background_battery_usage">مصرف نامحدود باتری</string>
-    <string name="allow_setting_exact_alarms">تنظیم آلارم دقیق</string>
+    <string name="allow_setting_exact_alarms">تنطیم آلارم دقیق</string>
     <string name="battery_permissoin_subtitle">اجازه دهید برنامه در پس‌زمینه اجرا شود</string>
     <string name="alarm_permissoin_subtitle">اجازه دهید برنامه یادآوری‌ها را زمان‌بندی کند</string>
     <string name="refresh">تازه‌سازی</string>
@@ -44,9 +44,9 @@
     <string name="reminder_notification_text">قطعی برق %1$s از %2$s تا %3$s</string>
     <string name="default_place_name">خانه</string>
     <string name="upcoming_outages">قطعی‌های پیش رو</string>
-    <string name="preferences_title">تنظیمات</string>
+    <string name="preferences_title">تنطیمات</string>
     <string name="schedules_tab">برنامه‌ها</string>
-    <string name="prefs_tab">تنظیمات</string>
+    <string name="prefs_tab">تنطیمات</string>
     <string name="add_new_place">افزودن مکان جدید</string>
     <string name="add_first_place">افزودن اولین مکان</string>
     <string name="empty_places_message">برای پایش قطعی، یک مکان اضافه کنید.</string>
@@ -98,4 +98,51 @@
     <string name="update_button">بروزرسانی</string>
     <string name="all">همه</string>
     <string name="version">نسخه :‌V%s</string>
+
+    <!-- ===== بازطراحی رابط کاربری ===== -->
+    <string name="action_close">بستن</string>
+    <string name="retry">تلاش دوباره</string>
+    <string name="update_available_subtitle">نسخه %1$s آماده نصب است</string>
+
+    <string name="outage_countdown">قطع تا %1$s</string>
+    <string name="outage_in_progress">قطعی در جریان است</string>
+    <string name="outage_finished">قطعی پایان یافت</string>
+    <string name="label_duration">مدت</string>
+    <string name="duration_hours_minutes">%1$d ساعت و %2$d دقیقه</string>
+    <string name="duration_minutes">%1$d دقیقه</string>
+    <string name="outage_reason">دلیل</string>
+    <string name="outage_address">آدرس</string>
+    <string name="schedule_details">جزئیات</string>
+
+    <string name="loading_schedules">در حال دریافت برنامه قطعی‌ها…</string>
+    <string name="stale_data_notice">آخرین اطلاعاتی که تونستیم بگیریم را می‌بینی.</string>
+    <string name="no_places_title">هنوز مکانی اضافه نکردی</string>
+    <string name="all_clear_title">خبر خوب</string>
+    <string name="outages_count">%1$d مورد</string>
+    <string name="monitoring_active">پایش روشن است</string>
+    <string name="monitoring_inactive">پایش خاموش است</string>
+
+    <string name="permissions_section_title">نیاز به توجه تو</string>
+    <string name="places_count">%1$d مکان</string>
+    <string name="reminders_count">%1$d یادآور</string>
+    <string name="reminders_off">یادآوری خاموش</string>
+    <string name="dark_mode_subtitle">سطوح تیره، شب‌ها راحت‌تر برای چشم</string>
+    <string name="language_subtitle">زبان نمایش برنامه</string>
+    <string name="about_subtitle">سورس کد، انتشارها و مشکلات</string>
+    <string name="logout_card_subtitle">خروج از حساب برق‌من</string>
+
+    <string name="place_editor_subtitle_add">قطعی‌های یک مکان جدید را پایش کن</string>
+    <string name="place_editor_subtitle_edit">اطلاعات این مکان را ویرایش کن</string>
+    <string name="bill_id_helper">شناسه ۱۳ رقمی روی قبض برق</string>
+    <string name="place_reminders_hint">انتخاب کن کی خبرت کنیم</string>
+
+    <string name="login_phone_helper">یک کد یک‌بارمصرف برات پیامک می‌کنیم</string>
+    <string name="login_invalid_phone">یک شماره موبایل ۱۱ رقمی معتبر وارد کن</string>
+    <string name="login_code_title">کد را وارد کن</string>
+    <string name="login_code_subtitle">ارسال شد به %1$s</string>
+    <string name="login_resend">ارسال مجدد کد</string>
+    <string name="login_resend_in">ارسال مجدد تا %1$d ثانیه</string>
+    <string name="login_change_number">تغییر شماره</string>
+    <string name="login_success_title">وارد شدی</string>
+    <string name="login_success_subtitle">برای شروع پایش، برنامه را دوباره اجرا کن</string>
 </resources>
